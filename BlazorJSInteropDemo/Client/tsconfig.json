@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "strict": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "types": [ "@microsoft/dotnet-js-interop" ],
+  },
+  "include": [ "src/**/*.ts" ]
+}

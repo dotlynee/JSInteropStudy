@@ -1,0 +1,111 @@
+﻿@page "/dom-interop"
+@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<div class="container mt-4">
+    <h3>JSInterop DOM 조작 데모</h3>
+    <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+    <p role="status">Current count: @currentCount</p>
+
+    <button @onclick="AddRow" class="btn btn-primary mb-3">
+        행 추가 (TypeScript 호출)
+    </button>
+
+    <table class="table table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>City</th>
+            </tr>
+        </thead>
+        <tbody @ref="_tableBody">
+            <!-- JavaScript에서 추가될 행 영역 -->
+        </tbody>
+    </table>
+</div>
+
+<!-- 렌더링 부분 유지 -->
+@code {
+    private IJSObjectReference? _jsModule;
+    private ElementReference _tableBody;
+    private DotNetObjectReference<DOMInterop>? _dotNetRef;
+
+    private readonly Lazy<Task<IJSObjectReference>> _jsModuleTask;
+
+    private int currentCount = 0;
+
+    [JSInvokable("OnRowAdded")] // JS에서 호출 가능한 메서드 표시
+    public void HandleJsCallback(string name, string city)
+    {
+        Console.WriteLine($"Received: {name} - {city}");
+        // 상태 업데이트 필요 시 StateHasChanged() 호출
+        currentCount++; // ✅ 인스턴스 변수 접근 가능
+        StateHasChanged(); // ✅ UI 갱신 가능
+    }
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+
+    public DOMInterop()
+    {
+        _jsModuleTask = new(() => JSRuntime
+            .InvokeAsync<IJSObjectReference>("import", "./js/dist/blazor-interop.js")
+            .AsTask());
+    }
+
+    protected override void OnInitialized()
+    {
+        _dotNetRef = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) {
+            if (!_jsModuleTask.IsValueCreated)
+            {
+                _jsModule = await _jsModuleTask.Value;
+            }
+        }
+    }
+
+    private async Task AddRow()
+    {
+        try
+        {
+            if (_jsModule is not null)
+            {
+                await _jsModule.InvokeVoidAsync("AddTableRow",
+                    _tableBody,
+                    "Clark Kent",
+                    "Metropolis",
+                    _dotNetRef // JS에 .NET 참조 전달
+                );
+            }
+        }
+        catch (JSException ex)
+        {
+            // JS 측 예외 처리
+            Console.WriteLine($"JS 오류: {ex.Message}");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule is not null)
+        {
+            try
+            {
+                await _jsModule.DisposeAsync();
+            } catch
+            {
+               // do nothing 
+            }
+            _jsModule = null; // 명시적 null 할당으로 GC 유도
+        }
+
+        _dotNetRef?.Dispose();
+    }
+}

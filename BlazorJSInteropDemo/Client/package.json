@@ -1,0 +1,23 @@
+{
+  "name": "client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "preview": "vite preview --port 3000"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.7.0",
+  "dependencies": {
+    "vite": "^6.2.4"
+  },
+  "devDependencies": {
+    "@microsoft/dotnet-js-interop": "^8.0.0",
+    "@types/node": "^22.13.14",
+    "typescript": "^5.8.2"
+  }
+}
